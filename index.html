@@ -283,7 +283,8 @@
     
     async function callBackendAPI(action, data) {
       if (GAS_API_URL.includes("請把剛剛部署")) throw new Error("Missing API URL");
-      const res = await fetch(GAS_API_URL, { method: 'POST', body: JSON.stringify({ action, data }), headers: { 'Content-Type': 'text/plain;charset=utf-8' } });
+      
+      const res = await fetch(GAS_API_URL, { method: 'POST', body: JSON.stringify({ action, data }), headers: { 'Content-Type': 'text/plain;charset=utf-8' }, redirect: 'follow' });
       return await res.json();
     }
 
@@ -293,7 +294,7 @@
       t.className = `px-5 py-3.5 rounded-xl shadow-xl transition-all duration-300 font-bold text-sm text-center text-white transform -translate-y-10 opacity-0 ${bg} w-full`;
       t.innerText = msg; c.appendChild(t);
       requestAnimationFrame(() => t.classList.replace('-translate-y-10', 'translate-y-0') || t.classList.replace('opacity-0', 'opacity-100'));
-      setTimeout(() => { t.classList.replace('translate-y-0', '-translate-y-10') || t.classList.replace('opacity-100', 'opacity-0'); setTimeout(() => t.remove(), 300); }, 3000);
+      setTimeout(() => { t.classList.replace('translate-y-0', '-translate-y-10') || t.classList.replace('opacity-100', 'opacity-0'); setTimeout(() => t.remove(), 300); }, 4500);
     }
 
     
@@ -312,7 +313,6 @@
       });
       document.getElementById(`tab-content-${tabId}`).classList.remove('hidden');
       const activeBtn = document.getElementById(`tab-app-${tabId}`); activeBtn.classList.add('text-teal-700', 'border-teal-600'); activeBtn.classList.remove('text-slate-400', 'border-transparent');
-      
       
       if (tabId === 'market') { loadMarketData(); }
     }
@@ -396,32 +396,41 @@
     }
 
     // ==========================================
-    // 買賣專區邏輯 (雙子分頁 + 草稿 + 樂觀 UI + 🆕動態載入資料)
+    // 買賣專區邏輯 (修正無限載入問題，強化錯誤捕捉)
     // ==========================================
 
-    // 🆕 核心新增：向 GAS 抓取試算表資料的函式
     async function loadMarketData() {
-      document.getElementById('seller-items-container').innerHTML = '<p class="text-center text-slate-400 font-bold mt-10"><i class="fa-solid fa-spinner fa-spin mr-2"></i>載入試算表資料庫中...</p>';
-      document.getElementById('buyer-reqs-container').innerHTML = '<p class="text-center text-slate-400 font-bold mt-10"><i class="fa-solid fa-spinner fa-spin mr-2"></i>載入試算表資料庫中...</p>';
+      // 顯示較友善的載入畫面
+      document.getElementById('seller-items-container').innerHTML = '<div class="text-center py-10"><i class="fa-solid fa-spinner fa-spin text-teal-600 text-2xl mb-3"></i><p class="text-slate-500 font-bold text-sm tracking-widest">正在安全連線並載入資料庫...</p></div>';
+      document.getElementById('buyer-reqs-container').innerHTML = '<div class="text-center py-10"><i class="fa-solid fa-spinner fa-spin text-indigo-600 text-2xl mb-3"></i><p class="text-slate-500 font-bold text-sm tracking-widest">正在安全連線並載入資料庫...</p></div>';
+      
       try {
         const [itemsRes, reqsRes] = await Promise.all([
           callBackendAPI('getItems', {}),
           callBackendAPI('getRequirements', {})
         ]);
         
-        if (itemsRes.status === 'success') {
+        // 嚴格檢查 API 回傳狀態，若失敗彈出錯誤警告
+        if (itemsRes && itemsRes.status === 'success') {
           sellerItems = itemsRes.data;
-          localStorage.setItem('local_seller_items', JSON.stringify(sellerItems)); // 同步本地快取
-          renderSellerItems();
+          localStorage.setItem('local_seller_items', JSON.stringify(sellerItems)); 
+        } else {
+          showToast(itemsRes?.message || "物件資料庫讀取異常", "error");
         }
         
-        if (reqsRes.status === 'success') {
+        if (reqsRes && reqsRes.status === 'success') {
           buyerReqs = reqsRes.data;
-          localStorage.setItem('local_buyer_reqs', JSON.stringify(buyerReqs)); // 同步本地快取
-          renderBuyerReqs();
+          localStorage.setItem('local_buyer_reqs', JSON.stringify(buyerReqs)); 
+        } else {
+          showToast(reqsRes?.message || "需求資料庫讀取異常", "error");
         }
+
       } catch (error) {
-        showToast("資料庫載入失敗，已切換為本地快取", "error");
+        showToast("資料庫連線失敗，已切換為離線快取", "error");
+        console.error("載入失敗詳情：", error);
+      } finally {
+        // 💎 最重要的修正：無論剛剛 try 裡面發生什麼事，最後都必須執行這兩行！
+        // 這樣才能確保畫面的「載入中...」被清除，並重新渲染快取或最新資料。
         renderSellerItems();
         renderBuyerReqs();
       }
@@ -440,9 +449,11 @@
 
     function renderSellerItems() {
       const c = document.getElementById('seller-items-container'); c.innerHTML = '';
-      if(sellerItems.length === 0) return c.innerHTML = '<p class="text-center text-slate-400 font-bold mt-10">尚無上架物件</p>';
+      if(!sellerItems || sellerItems.length === 0) return c.innerHTML = '<p class="text-center text-slate-400 font-bold mt-10">尚無上架物件</p>';
+      
       sellerItems.forEach(i => {
-        let urls = i.photoUrlsString ? i.photoUrlsString.split(',') : [];
+        // 優化圖片解析防呆：確保字串存在且不為空才進行 split
+        let urls = (i.photoUrlsString && typeof i.photoUrlsString === 'string' && i.photoUrlsString.trim() !== '') ? i.photoUrlsString.split(',') : [];
         let imgs = urls.length ? urls.map(u => `<img src="${u}" class="h-20 w-28 flex-shrink-0 object-cover rounded shadow-sm">`).join('') : '<div class="h-20 w-full flex items-center justify-center bg-slate-100 rounded text-xs text-slate-400 font-bold">照片處理中...</div>';
         c.insertAdjacentHTML('beforeend', `<div class="bg-white rounded-xl shadow-sm border border-l-4 border-l-teal-500 p-4"><div class="flex justify-between items-center mb-1"><span class="text-[10px] font-mono text-slate-400">${i.id}</span><span class="bg-teal-50 text-teal-700 px-2 rounded text-[10px] font-bold">上架中</span></div><h3 class="font-bold text-sm">${i.name} <span class="text-xs text-slate-500">($${i.price})</span></h3><p class="text-xs text-slate-500 mt-1"><i class="fa-solid fa-location-dot mr-1"></i>${i.city}${i.district}</p><div class="flex space-x-2 overflow-x-auto hide-scroll mt-3">${imgs}</div></div>`);
       });
@@ -450,7 +461,8 @@
 
     function renderBuyerReqs() {
       const c = document.getElementById('buyer-reqs-container'); c.innerHTML = '';
-      if(buyerReqs.length === 0) return c.innerHTML = '<p class="text-center text-slate-400 font-bold mt-10">尚無發佈需求</p>';
+      if(!buyerReqs || buyerReqs.length === 0) return c.innerHTML = '<p class="text-center text-slate-400 font-bold mt-10">尚無發佈需求</p>';
+      
       buyerReqs.forEach(r => {
         c.insertAdjacentHTML('beforeend', `<div class="bg-white rounded-xl shadow-sm border border-l-4 border-l-indigo-500 p-4"><div class="flex justify-between items-center mb-1"><span class="text-[10px] font-mono text-slate-400">${r.id}</span><span class="bg-indigo-50 text-indigo-700 px-2 rounded text-[10px] font-bold">徵求中</span></div><h3 class="font-bold text-sm">徵求：${r.itemType} <span class="text-xs text-slate-500">(${r.color})</span></h3><p class="text-[10px] font-bold text-green-600 mt-1"><i class="fa-solid fa-leaf mr-1"></i>預計省下：$${r.savedCost}</p><p class="text-xs text-slate-500 mt-1"><i class="fa-solid fa-location-dot mr-1"></i>${r.city}${r.district}</p></div>`);
       });
