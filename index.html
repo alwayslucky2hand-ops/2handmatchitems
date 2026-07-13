@@ -163,7 +163,37 @@
 
       <section id="tab-content-chat" class="hidden w-full p-10 text-center text-slate-500 font-bold"><i class="fa-solid fa-robot text-5xl mb-4 text-slate-300 block"></i>AI 智慧對談與媒合引擎，持續開發中...</section>
 
-      <section id="tab-content-match" class="hidden w-full p-10 text-center text-slate-500 font-bold"><i class="fa-solid fa-handshake text-5xl mb-4 text-slate-300 block"></i>大廳展示準備中，敬請期待...</section>
+      <section id="tab-content-match" class="hidden w-full animate-fade-in">
+        <div class="bg-gradient-to-br from-emerald-600 to-teal-800 rounded-2xl p-6 text-white shadow-lg mb-8 relative overflow-hidden">
+          <div class="absolute top-0 right-0 opacity-10 text-9xl transform translate-x-4 -translate-y-4"><i class="fa-solid fa-leaf"></i></div>
+          <h2 class="text-xl font-bold tracking-wider mb-6 relative z-10 flex items-center"><i class="fa-solid fa-earth-asia mr-2"></i>全站永續影響力戰報</h2>
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-4 relative z-10">
+            <div class="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
+              <p class="text-[10px] text-teal-100 font-bold tracking-widest mb-1">累積減碳量</p>
+              <p class="text-2xl font-black"><span id="stat-carbon">0</span> <span class="text-sm font-normal">kg CO₂</span></p>
+            </div>
+            <div class="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
+              <p class="text-[10px] text-teal-100 font-bold tracking-widest mb-1">買家省下採購費</p>
+              <p class="text-2xl font-black"><span id="stat-buyer">0</span> <span class="text-sm font-normal">元</span></p>
+            </div>
+            <div class="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
+              <p class="text-[10px] text-teal-100 font-bold tracking-widest mb-1">賣家省下清運費</p>
+              <p class="text-2xl font-black"><span id="stat-seller">0</span> <span class="text-sm font-normal">元</span></p>
+            </div>
+            <div class="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
+              <p class="text-[10px] text-teal-100 font-bold tracking-widest mb-1">成功媒合總件數</p>
+              <p class="text-2xl font-black"><span id="stat-matches">0</span> <span class="text-sm font-normal">件</span></p>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex justify-between items-end mb-4 gap-4">
+          <div><h2 class="text-xl font-bold text-slate-800 tracking-wider">成交案例動態牆</h2><p class="text-xs text-slate-500 mt-1 font-bold">每一筆成交，都是地球的一次重生。</p></div>
+        </div>
+        <div id="matches-container" class="grid grid-cols-1 md:grid-cols-2 gap-4 pb-8">
+          </div>
+      </section>
+
     </div>
   </main>
 
@@ -281,9 +311,9 @@
     let currentAngleIndex = 0; let mockUploadedPhotos = []; let videoStream = null;
 
     
+    
     async function callBackendAPI(action, data) {
       if (GAS_API_URL.includes("請把剛剛部署")) throw new Error("Missing API URL");
-      
       const res = await fetch(GAS_API_URL, { method: 'POST', body: JSON.stringify({ action, data }), headers: { 'Content-Type': 'text/plain;charset=utf-8' }, redirect: 'follow' });
       return await res.json();
     }
@@ -314,7 +344,9 @@
       document.getElementById(`tab-content-${tabId}`).classList.remove('hidden');
       const activeBtn = document.getElementById(`tab-app-${tabId}`); activeBtn.classList.add('text-teal-700', 'border-teal-600'); activeBtn.classList.remove('text-slate-400', 'border-transparent');
       
+      
       if (tabId === 'market') { loadMarketData(); }
+      if (tabId === 'match') { loadMatchData(); }
     }
 
     function showAppArea() {
@@ -400,7 +432,6 @@
     // ==========================================
 
     async function loadMarketData() {
-      // 顯示較友善的載入畫面
       document.getElementById('seller-items-container').innerHTML = '<div class="text-center py-10"><i class="fa-solid fa-spinner fa-spin text-teal-600 text-2xl mb-3"></i><p class="text-slate-500 font-bold text-sm tracking-widest">正在安全連線並載入資料庫...</p></div>';
       document.getElementById('buyer-reqs-container').innerHTML = '<div class="text-center py-10"><i class="fa-solid fa-spinner fa-spin text-indigo-600 text-2xl mb-3"></i><p class="text-slate-500 font-bold text-sm tracking-widest">正在安全連線並載入資料庫...</p></div>';
       
@@ -410,8 +441,8 @@
           callBackendAPI('getRequirements', {})
         ]);
         
-        // 嚴格檢查 API 回傳狀態，若失敗彈出錯誤警告
         if (itemsRes && itemsRes.status === 'success') {
+          // 在此解包 res.data 並利用其 _rowId 保持精準對應
           sellerItems = itemsRes.data;
           localStorage.setItem('local_seller_items', JSON.stringify(sellerItems)); 
         } else {
@@ -429,7 +460,6 @@
         showToast("資料庫連線失敗，已切換為離線快取", "error");
         console.error("載入失敗詳情：", error);
       } finally {
-        // 💎 無論成功或失敗，最後都必須執行這兩行來清除「載入中」狀態！
         renderSellerItems();
         renderBuyerReqs();
       }
@@ -446,14 +476,12 @@
       }
     }
 
-    // 🔨 重構：支援點擊展開/收合卡片的賣家清單渲染
     function renderSellerItems() {
       const c = document.getElementById('seller-items-container');
       c.innerHTML = '';
       if(!sellerItems || sellerItems.length === 0) return c.innerHTML = '<p class="text-center text-slate-400 font-bold mt-10">尚無上架物件</p>';
       
       sellerItems.forEach(i => {
-        // 優化圖片解析防呆：過濾無效空白字串，正確處理圖片 src
         let urls = (i.photoUrlsString && typeof i.photoUrlsString === 'string' && i.photoUrlsString.trim() !== '') 
           ? i.photoUrlsString.split(',').filter(u => u.trim() !== '') 
           : [];
@@ -462,13 +490,12 @@
           ? urls.map(u => `<img src="${u.trim()}" alt="${i.name}" class="h-24 w-32 flex-shrink-0 object-cover rounded-lg shadow-sm border border-slate-200 bg-slate-50">`).join('') 
           : '<div class="h-24 w-full flex items-center justify-center bg-slate-50 border border-slate-200 border-dashed rounded-lg text-xs text-slate-400 font-bold">照片處理中...</div>';
         
-        // 建立極簡摺疊卡片 HTML 結構
         const cardHTML = `
           <div class="bg-white rounded-xl shadow-sm border border-l-4 border-l-teal-500 p-4 transition-all">
             <div class="flex justify-between items-center cursor-pointer" onclick="toggleSellerCard('${i.id}')">
               <div class="flex-grow">
                 <div class="flex items-center gap-2 mb-1">
-                  <span class="text-[10px] font-mono text-slate-400">${i.id}</span>
+                  <span class="text-[10px] font-mono text-slate-400">${i.id} (Row: ${i._rowId || '-'})</span>
                   <span class="bg-teal-50 text-teal-700 px-2 py-0.5 rounded text-[10px] font-bold">上架中</span>
                 </div>
                 <h3 class="font-bold text-sm text-slate-800">${i.name} <span class="text-xs text-teal-600 font-mono ml-1">$${i.price}</span></h3>
@@ -496,18 +523,14 @@
       });
     }
 
-    // 🔨 新增：切換卡片展開/收合的邏輯
     window.toggleSellerCard = function(id) {
       const content = document.getElementById(`content-${id}`);
       const arrow = document.getElementById(`arrow-${id}`);
-      
       if (content.classList.contains('grid-rows-[0fr]')) {
-        // 展開卡片，旋轉箭頭
         content.classList.remove('grid-rows-[0fr]');
         content.classList.add('grid-rows-[1fr]');
         arrow.classList.add('rotate-180');
       } else {
-        // 收合卡片，還原箭頭
         content.classList.remove('grid-rows-[1fr]');
         content.classList.add('grid-rows-[0fr]');
         arrow.classList.remove('rotate-180');
@@ -519,7 +542,7 @@
       if(!buyerReqs || buyerReqs.length === 0) return c.innerHTML = '<p class="text-center text-slate-400 font-bold mt-10">尚無發佈需求</p>';
       
       buyerReqs.forEach(r => {
-        c.insertAdjacentHTML('beforeend', `<div class="bg-white rounded-xl shadow-sm border border-l-4 border-l-indigo-500 p-4"><div class="flex justify-between items-center mb-1"><span class="text-[10px] font-mono text-slate-400">${r.id}</span><span class="bg-indigo-50 text-indigo-700 px-2 rounded text-[10px] font-bold">徵求中</span></div><h3 class="font-bold text-sm">徵求：${r.itemType} <span class="text-xs text-slate-500">(${r.color})</span></h3><p class="text-[10px] font-bold text-green-600 mt-1"><i class="fa-solid fa-leaf mr-1"></i>預計省下：$${r.savedCost}</p><p class="text-xs text-slate-500 mt-1"><i class="fa-solid fa-location-dot mr-1"></i>${r.city}${r.district}</p></div>`);
+        c.insertAdjacentHTML('beforeend', `<div class="bg-white rounded-xl shadow-sm border border-l-4 border-l-indigo-500 p-4"><div class="flex justify-between items-center mb-1"><span class="text-[10px] font-mono text-slate-400">${r.id} (Row: ${r._rowId || '-'})</span><span class="bg-indigo-50 text-indigo-700 px-2 rounded text-[10px] font-bold">徵求中</span></div><h3 class="font-bold text-sm">徵求：${r.itemType} <span class="text-xs text-slate-500">(${r.color})</span></h3><p class="text-[10px] font-bold text-green-600 mt-1"><i class="fa-solid fa-leaf mr-1"></i>預計省下：$${r.savedCost}</p><p class="text-xs text-slate-500 mt-1"><i class="fa-solid fa-location-dot mr-1"></i>${r.city}${r.district}</p></div>`);
       });
     }
 
@@ -600,6 +623,86 @@
       sellerItems.unshift(newItem); localStorage.setItem('local_seller_items', JSON.stringify(sellerItems)); renderSellerItems(); clearDraft('seller'); closeModal('seller-modal');
       showToast("🚀 物件已上架，背景上傳圖片中...", "success");
       callBackendAPI('saveListing', newItem).then(res => { if(res.photoUrls) { sellerItems[0].photoUrlsString = res.photoUrls; localStorage.setItem('local_seller_items', JSON.stringify(sellerItems)); renderSellerItems(); } }).catch(e => console.error("寫入失敗", e));
+    }
+
+    // ==========================================
+    // 🌿 成交大廳渲染與資料載入
+    // ==========================================
+    
+    async function loadMatchData() {
+      const c = document.getElementById('matches-container');
+      c.innerHTML = '<div class="col-span-full text-center py-10"><i class="fa-solid fa-spinner fa-spin text-emerald-600 text-2xl mb-3"></i><p class="text-slate-500 font-bold text-sm tracking-widest">正在安全載入永續成交戰報...</p></div>';
+
+      try {
+        const res = await callBackendAPI('getMatches', {});
+        if (res && res.status === 'success') {
+          // 解包 res.data (包含 matches 陣列與 stats 物件)
+          const appData = res.data;
+          
+          // 更新頂部戰報數字
+          document.getElementById('stat-carbon').innerText = appData.stats.totalCarbon.toLocaleString();
+          document.getElementById('stat-buyer').innerText = appData.stats.totalBuyerSaved.toLocaleString();
+          document.getElementById('stat-seller').innerText = appData.stats.totalSellerSaved.toLocaleString();
+          document.getElementById('stat-matches').innerText = appData.stats.matchCount.toLocaleString();
+
+          // 渲染動態牆
+          renderMatches(appData.matches);
+        } else {
+          showToast(res?.message || "成交紀錄讀取異常", "error");
+          c.innerHTML = '<p class="col-span-full text-center text-slate-400 font-bold mt-10">資料載入失敗</p>';
+        }
+      } catch (error) {
+        showToast("伺服器連線異常", "error");
+        c.innerHTML = '<p class="col-span-full text-center text-slate-400 font-bold mt-10">無法連線至資料庫</p>';
+      }
+    }
+
+    function renderMatches(matches) {
+      const c = document.getElementById('matches-container');
+      c.innerHTML = '';
+      if (!matches || matches.length === 0) {
+        c.innerHTML = '<p class="col-span-full text-center text-slate-400 font-bold mt-10">目前尚無成交紀錄，讓我們一起創造第一筆愛心！</p>';
+        return;
+      }
+
+      matches.forEach(m => {
+        // 照片防呆：如果無照片則顯示溫暖的備用圖示
+        const imgHTML = m.photoUrl
+          ? `<img src="${m.photoUrl}" alt="${m.itemName}" class="w-full h-40 object-cover">`
+          : `<div class="w-full h-40 bg-emerald-50 flex items-center justify-center text-emerald-300"><i class="fa-solid fa-couch text-5xl"></i></div>`;
+
+        const card = `
+          <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden hover:shadow-md transition-shadow">
+            <div class="relative">
+              ${imgHTML}
+              <div class="absolute top-2 right-2 bg-white/95 backdrop-blur-sm px-2.5 py-1 rounded text-[10px] font-bold text-emerald-700 shadow-sm flex items-center tracking-widest">
+                <i class="fa-solid fa-circle-check mr-1.5 text-emerald-500"></i> ${m.status}
+              </div>
+            </div>
+            <div class="p-5">
+              <div class="flex justify-between items-start mb-3">
+                <h3 class="font-bold text-sm text-slate-800 line-clamp-1">${m.itemName}</h3>
+                <span class="text-[10px] text-slate-400 font-mono bg-slate-50 px-2 py-0.5 rounded">${m.completedDate}</span>
+              </div>
+              <div class="space-y-2 mt-4 border-t border-slate-50 pt-4">
+                <div class="flex justify-between items-center text-xs">
+                  <span class="text-slate-500"><i class="fa-solid fa-wallet text-slate-400 mr-1.5"></i>買家省下採購費</span>
+                  <span class="font-bold text-slate-700">$${m.savedBuyerCost.toLocaleString()}</span>
+                </div>
+                <div class="flex justify-between items-center text-xs">
+                  <span class="text-slate-500"><i class="fa-solid fa-truck-ramp-box text-slate-400 mr-1.5"></i>賣家省下清運費</span>
+                  <span class="font-bold text-slate-700">$${m.savedSellerFee.toLocaleString()}</span>
+                </div>
+                <div class="flex justify-between items-center text-sm bg-emerald-50 p-2.5 rounded-lg mt-2 border border-emerald-100/50">
+                  <span class="text-emerald-700 font-bold text-xs"><i class="fa-solid fa-leaf text-emerald-500 mr-1.5"></i>愛心減碳貢獻</span>
+                  <span class="font-black text-emerald-600">${m.carbonSaved} kg CO₂</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+        c.insertAdjacentHTML('beforeend', card);
+      });
     }
 
   </script>
