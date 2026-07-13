@@ -396,7 +396,7 @@
     }
 
     // ==========================================
-    // 買賣專區邏輯 (修正無限載入問題，強化錯誤捕捉)
+    // 🌟 買賣專區邏輯 (修正無限載入問題與優化卡片摺疊功能)
     // ==========================================
 
     async function loadMarketData() {
@@ -429,8 +429,7 @@
         showToast("資料庫連線失敗，已切換為離線快取", "error");
         console.error("載入失敗詳情：", error);
       } finally {
-        // 💎 最重要的修正：無論剛剛 try 裡面發生什麼事，最後都必須執行這兩行！
-        // 這樣才能確保畫面的「載入中...」被清除，並重新渲染快取或最新資料。
+        // 💎 無論成功或失敗，最後都必須執行這兩行來清除「載入中」狀態！
         renderSellerItems();
         renderBuyerReqs();
       }
@@ -447,17 +446,73 @@
       }
     }
 
+    // 🔨 重構：支援點擊展開/收合卡片的賣家清單渲染
     function renderSellerItems() {
-      const c = document.getElementById('seller-items-container'); c.innerHTML = '';
+      const c = document.getElementById('seller-items-container');
+      c.innerHTML = '';
       if(!sellerItems || sellerItems.length === 0) return c.innerHTML = '<p class="text-center text-slate-400 font-bold mt-10">尚無上架物件</p>';
       
       sellerItems.forEach(i => {
-        // 優化圖片解析防呆：確保字串存在且不為空才進行 split
-        let urls = (i.photoUrlsString && typeof i.photoUrlsString === 'string' && i.photoUrlsString.trim() !== '') ? i.photoUrlsString.split(',') : [];
-        let imgs = urls.length ? urls.map(u => `<img src="${u}" class="h-20 w-28 flex-shrink-0 object-cover rounded shadow-sm">`).join('') : '<div class="h-20 w-full flex items-center justify-center bg-slate-100 rounded text-xs text-slate-400 font-bold">照片處理中...</div>';
-        c.insertAdjacentHTML('beforeend', `<div class="bg-white rounded-xl shadow-sm border border-l-4 border-l-teal-500 p-4"><div class="flex justify-between items-center mb-1"><span class="text-[10px] font-mono text-slate-400">${i.id}</span><span class="bg-teal-50 text-teal-700 px-2 rounded text-[10px] font-bold">上架中</span></div><h3 class="font-bold text-sm">${i.name} <span class="text-xs text-slate-500">($${i.price})</span></h3><p class="text-xs text-slate-500 mt-1"><i class="fa-solid fa-location-dot mr-1"></i>${i.city}${i.district}</p><div class="flex space-x-2 overflow-x-auto hide-scroll mt-3">${imgs}</div></div>`);
+        // 優化圖片解析防呆：過濾無效空白字串，正確處理圖片 src
+        let urls = (i.photoUrlsString && typeof i.photoUrlsString === 'string' && i.photoUrlsString.trim() !== '') 
+          ? i.photoUrlsString.split(',').filter(u => u.trim() !== '') 
+          : [];
+        
+        let imgs = urls.length > 0 
+          ? urls.map(u => `<img src="${u.trim()}" alt="${i.name}" class="h-24 w-32 flex-shrink-0 object-cover rounded-lg shadow-sm border border-slate-200 bg-slate-50">`).join('') 
+          : '<div class="h-24 w-full flex items-center justify-center bg-slate-50 border border-slate-200 border-dashed rounded-lg text-xs text-slate-400 font-bold">照片處理中...</div>';
+        
+        // 建立極簡摺疊卡片 HTML 結構
+        const cardHTML = `
+          <div class="bg-white rounded-xl shadow-sm border border-l-4 border-l-teal-500 p-4 transition-all">
+            <div class="flex justify-between items-center cursor-pointer" onclick="toggleSellerCard('${i.id}')">
+              <div class="flex-grow">
+                <div class="flex items-center gap-2 mb-1">
+                  <span class="text-[10px] font-mono text-slate-400">${i.id}</span>
+                  <span class="bg-teal-50 text-teal-700 px-2 py-0.5 rounded text-[10px] font-bold">上架中</span>
+                </div>
+                <h3 class="font-bold text-sm text-slate-800">${i.name} <span class="text-xs text-teal-600 font-mono ml-1">$${i.price}</span></h3>
+                <p class="text-xs text-slate-500 mt-1"><i class="fa-solid fa-location-dot mr-1"></i>${i.city}${i.district}</p>
+              </div>
+              <div class="pl-4 text-slate-400 flex items-center justify-center">
+                <svg id="arrow-${i.id}" class="w-5 h-5 transition-transform duration-300 ease-in-out transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                </svg>
+              </div>
+            </div>
+            
+            <div id="content-${i.id}" class="grid grid-rows-[0fr] transition-all duration-300 ease-in-out">
+              <div class="overflow-hidden">
+                <div class="pt-4 mt-3 border-t border-slate-100">
+                  <div class="flex space-x-3 overflow-x-auto hide-scroll pb-2">
+                    ${imgs}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+        c.insertAdjacentHTML('beforeend', cardHTML);
       });
     }
+
+    // 🔨 新增：切換卡片展開/收合的邏輯
+    window.toggleSellerCard = function(id) {
+      const content = document.getElementById(`content-${id}`);
+      const arrow = document.getElementById(`arrow-${id}`);
+      
+      if (content.classList.contains('grid-rows-[0fr]')) {
+        // 展開卡片，旋轉箭頭
+        content.classList.remove('grid-rows-[0fr]');
+        content.classList.add('grid-rows-[1fr]');
+        arrow.classList.add('rotate-180');
+      } else {
+        // 收合卡片，還原箭頭
+        content.classList.remove('grid-rows-[1fr]');
+        content.classList.add('grid-rows-[0fr]');
+        arrow.classList.remove('rotate-180');
+      }
+    };
 
     function renderBuyerReqs() {
       const c = document.getElementById('buyer-reqs-container'); c.innerHTML = '';
