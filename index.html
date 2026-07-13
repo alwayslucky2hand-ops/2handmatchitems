@@ -2,113 +2,227 @@
 <html lang="zh-Hant-TW">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>我的上架物件 | 二手好麻吉</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>賣家上架 | 二手好麻吉</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
-    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar { width: 4px; height: 4px; }
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
     .hide-scroll::-webkit-scrollbar { display: none; }
     .camera-frame::before, .camera-frame::after { content: ''; position: absolute; width: 30px; height: 30px; border-color: #14b8a6; border-style: solid; z-index: 10; }
     .camera-frame::before { top: 0; left: 0; border-width: 3px 0 0 3px; }
     .camera-frame::after { top: 0; right: 0; border-width: 3px 3px 0 0; }
+    
+    /* 確保手機輸入框不會自動放大 */
+    input, select, textarea { font-size: 16px !important; }
   </style>
 </head>
-<body class="bg-slate-50 text-slate-800 min-h-screen pb-20">
+<body class="bg-slate-50 text-slate-800 min-h-screen pb-24">
 
-  <div id="toast-container" class="fixed top-6 right-6 z-[100] flex flex-col gap-3 pointer-events-none"></div>
+  <div id="toast-container" class="fixed top-6 left-1/2 -translate-x-1/2 z-[100] flex flex-col gap-3 pointer-events-none w-[90%] max-w-sm"></div>
 
   <header class="bg-white/90 backdrop-blur-md shadow-sm sticky top-0 z-40 border-b border-slate-100">
     <div class="max-w-4xl mx-auto px-5 h-16 flex items-center justify-between">
       <div class="flex items-center space-x-3">
-        <div class="bg-teal-700 text-white w-8 h-8 flex items-center justify-center rounded-md font-bold text-sm tracking-widest shadow-sm">友善</div>
+        <div class="bg-teal-700 text-white w-8 h-8 flex items-center justify-center rounded-md font-bold text-sm tracking-widest">友善</div>
         <div>
           <h1 class="text-sm font-bold text-slate-800 tracking-wide">二手好麻吉</h1>
-          <p class="text-[10px] text-teal-600 font-medium tracking-widest uppercase">Seller Center</p>
+          <p class="text-[10px] text-teal-600 font-medium tracking-widest uppercase">賣家中心</p>
         </div>
       </div>
-      <div class="text-xs font-bold text-teal-800" id="current-user-info"></div>
+      <div class="text-xs font-bold text-teal-800 bg-teal-50 px-3 py-1.5 rounded-full" id="current-user-info"></div>
     </div>
   </header>
 
-  <main class="w-full max-w-4xl mx-auto p-4 pt-8">
-    <div class="flex justify-between items-end mb-8 gap-4">
+  <main class="w-full max-w-4xl mx-auto p-4 pt-6">
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-end mb-6 gap-4">
       <div>
-        <h2 class="text-2xl font-bold text-slate-800 tracking-wider">我的上架物件</h2>
+        <h2 class="text-xl font-bold text-slate-800 tracking-wider">我的上架物件</h2>
+        <p class="text-xs text-slate-500 mt-1">死線越近將越靠前顯示，買家一目瞭然。</p>
       </div>
-      <button onclick="startListingFlow()" class="px-5 py-2.5 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-sm font-bold shadow-md transition duration-300 tracking-widest flex items-center">
-        <i class="fa-solid fa-camera-retro mr-2"></i> 我要上架
+      <button onclick="startListingFlow()" class="w-full md:w-auto px-5 py-3 bg-slate-800 hover:bg-slate-900 text-white rounded-xl font-bold shadow-md tracking-widest flex items-center justify-center transition">
+        <i class="fa-solid fa-camera-retro mr-2"></i> 智慧引導上架
       </button>
     </div>
+    
     <div id="items-container" class="space-y-4"></div>
   </main>
 
-  <div id="listing-modal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 opacity-0 transition-opacity">
-    <div class="bg-white w-full max-w-3xl rounded-2xl shadow-2xl overflow-hidden" id="listing-modal-content">
+  <div id="listing-modal" class="fixed inset-0 bg-slate-900/85 backdrop-blur-sm z-50 hidden flex items-center justify-center p-3 opacity-0 transition-opacity">
+    <div class="bg-slate-50 w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[95vh]" id="listing-modal-content">
       
-      <div class="bg-slate-800 p-4 text-white flex justify-between items-center relative z-20">
-        <h3 class="text-sm font-bold tracking-widest"><i class="fa-solid fa-camera-retro text-teal-400 mr-2"></i>AI 智慧引導拍照上架</h3>
-        <button onclick="closeModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-xl"></i></button>
+      <div class="bg-slate-800 p-4 text-white flex justify-between items-center shrink-0">
+        <h3 class="text-sm font-bold tracking-widest"><i class="fa-solid fa-wand-magic-sparkles text-teal-400 mr-2"></i>AI 智慧上架系統</h3>
+        <button onclick="closeModal()" class="text-slate-400 hover:text-white p-2"><i class="fa-solid fa-xmark text-xl"></i></button>
       </div>
 
-      <div class="p-6 max-h-[80vh] overflow-y-auto">
+      <div class="p-4 md:p-6 overflow-y-auto hide-scroll flex-grow">
+        
         <div id="step-camera" class="space-y-4">
-          <p class="text-xs text-teal-700 bg-teal-50 p-3 rounded-xl font-bold">請確保光線充足，不支援相簿上傳以確保真實性。</p>
+          <div class="bg-teal-100/50 p-3 rounded-xl border border-teal-200">
+            <p class="text-xs text-teal-800 font-bold leading-relaxed tracking-wide"><i class="fa-solid fa-circle-info mr-1"></i> 請保持光線明亮。為保障交易真實性，僅支援即時鏡頭拍攝，不支援相簿上傳。</p>
+          </div>
           
-          <div class="w-full h-72 bg-black rounded-xl overflow-hidden relative camera-frame p-2 flex items-center justify-center">
+          <div class="w-full aspect-[4/3] bg-black rounded-xl overflow-hidden relative camera-frame p-2 flex items-center justify-center shadow-inner">
             <video id="camera-stream" autoplay playsinline class="absolute inset-0 w-full h-full object-cover"></video>
             <canvas id="camera-canvas" class="hidden"></canvas>
-            <div class="z-10 absolute bottom-4 text-center w-full">
-              <h4 id="cam-angle-text" class="text-white text-2xl font-bold tracking-widest drop-shadow-lg">上方</h4>
+            <div class="z-10 absolute bottom-6 text-center w-full">
+              <span class="bg-black/50 text-white px-4 py-1.5 rounded-full text-xs font-bold tracking-widest backdrop-blur-sm">請拍攝物件的</span>
+              <h4 id="cam-angle-text" class="text-white text-3xl font-bold tracking-widest drop-shadow-lg mt-2">上方</h4>
             </div>
           </div>
           
-          <div class="flex justify-between items-center bg-slate-50 p-3 rounded-xl border border-slate-100">
-            <div class="flex space-x-1.5" id="cam-progress"></div>
-            <button id="btn-take-photo" onclick="takeRealPhoto()" class="px-6 py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-full text-sm font-bold shadow-md tracking-widest flex items-center">
+          <div class="flex justify-between items-center bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
+            <div class="flex space-x-1.5 w-1/2" id="cam-progress"></div>
+            <button id="btn-take-photo" onclick="takeRealPhoto()" class="px-5 py-3 bg-rose-600 hover:bg-rose-700 text-white rounded-full text-sm font-bold shadow-md tracking-widest flex items-center justify-center w-1/2 transition">
               <i class="fa-solid fa-camera mr-2"></i> 拍下此視角
             </button>
           </div>
         </div>
 
-        <div id="step-form" class="hidden space-y-6">
-          <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
-            <h4 class="text-xs font-bold text-teal-700 mb-3 border-b pb-2">AI 辨識結果</h4>
-            <div class="grid grid-cols-2 gap-3">
-              <div><label class="block text-[10px] text-slate-500">物件類別</label><input type="text" id="form-cat" class="w-full p-2 border rounded-lg text-sm font-bold"></div>
-              <div><label class="block text-[10px] text-slate-500">物件項目</label><input type="text" id="form-item" class="w-full p-2 border rounded-lg text-sm font-bold"></div>
-              <div class="col-span-2"><label class="block text-[10px] text-slate-500">物件名稱</label><input type="text" id="form-name" class="w-full p-2 border rounded-lg text-sm font-bold"></div>
-              <div class="col-span-2 flex gap-2">
-                <input type="number" id="form-w" placeholder="寬(cm)" class="w-1/3 p-2 border rounded-lg text-center font-mono">
-                <input type="number" id="form-d" placeholder="深(cm)" class="w-1/3 p-2 border rounded-lg text-center font-mono">
-                <input type="number" id="form-h" placeholder="高(cm)" class="w-1/3 p-2 border rounded-lg text-center font-mono">
+        <div id="step-form" class="hidden space-y-6 pb-6">
+          <div class="text-center mb-2">
+            <span class="inline-block bg-teal-100 text-teal-800 text-[10px] font-bold px-3 py-1 rounded-full tracking-widest mb-1">AI 已為您帶入資料</span>
+            <p class="text-xs text-slate-500 font-bold">請確認以下資訊，若有誤差可直接點擊修改</p>
+          </div>
+
+          <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+            <h4 class="text-sm font-bold text-teal-700 flex items-center border-b border-slate-100 pb-2"><i class="fa-solid fa-couch mr-2"></i>物件基本資料</h4>
+            
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="block text-[11px] font-bold text-slate-500 mb-1">物件類別 (IKEA分類)</label>
+                <input type="text" id="form-cat" placeholder="例：沙發與扶手椅" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-700 focus:outline-none focus:border-teal-500 focus:bg-white transition">
+              </div>
+              <div>
+                <label class="block text-[11px] font-bold text-slate-500 mb-1">物件項目 (精確分類)</label>
+                <input type="text" id="form-item" placeholder="例：雙人沙發" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-700 focus:outline-none focus:border-teal-500 focus:bg-white transition">
+              </div>
+              <div class="col-span-2">
+                <label class="block text-[11px] font-bold text-slate-500 mb-1">物件名稱 (標題)</label>
+                <input type="text" id="form-name" placeholder="例：KIVIK 雙人沙發" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-700 focus:outline-none focus:border-teal-500 focus:bg-white transition">
+              </div>
+              <div class="col-span-2">
+                <label class="block text-[11px] font-bold text-slate-500 mb-1">顏色色系 (買家最在意)</label>
+                <input type="text" id="form-color" placeholder="例：深灰色、原木色、白色" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-700 focus:outline-none focus:border-teal-500 focus:bg-white transition">
+              </div>
+            </div>
+
+            <div class="mt-4 pt-4 border-t border-slate-100">
+              <label class="block text-[11px] font-bold text-slate-500 mb-2">預估尺寸 (不規則物件請填最大值)</label>
+              <div class="flex gap-3">
+                <div class="relative w-1/3">
+                  <input type="number" id="form-w" placeholder="寬度" class="w-full p-3 pl-8 bg-slate-50 border border-slate-200 rounded-xl font-mono font-bold text-slate-700 focus:bg-white focus:border-teal-500 outline-none">
+                  <span class="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 font-bold">W</span>
+                </div>
+                <div class="relative w-1/3">
+                  <input type="number" id="form-d" placeholder="深度" class="w-full p-3 pl-8 bg-slate-50 border border-slate-200 rounded-xl font-mono font-bold text-slate-700 focus:bg-white focus:border-teal-500 outline-none">
+                  <span class="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 font-bold">D</span>
+                </div>
+                <div class="relative w-1/3">
+                  <input type="number" id="form-h" placeholder="高度" class="w-full p-3 pl-8 bg-slate-50 border border-slate-200 rounded-xl font-mono font-bold text-slate-700 focus:bg-white focus:border-teal-500 outline-none">
+                  <span class="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 font-bold">H</span>
+                </div>
               </div>
             </div>
           </div>
 
-          <div>
-            <h4 class="text-xs font-bold text-slate-600 mb-2">賣家與所在地</h4>
-            <div class="mb-3">
-              <label class="block text-[10px] text-slate-500">賣家會員代碼 (系統自動帶入)</label>
-              <input type="text" id="form-member-code" readonly class="w-full p-2 bg-slate-100 border rounded-lg text-sm font-mono text-slate-500 cursor-not-allowed">
-            </div>
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
-              <div><input type="text" id="loc-city" placeholder="縣市" value="台北市" class="w-full p-2 border rounded-lg text-sm"></div>
-              <div><input type="text" id="loc-dist" placeholder="鄉鎮區" value="信義區" class="w-full p-2 border rounded-lg text-sm"></div>
-              <div class="col-span-2"><input type="text" id="loc-road" placeholder="路段" value="信義路五段" class="w-full p-2 border rounded-lg text-sm"></div>
-              <div><input type="text" id="loc-no" placeholder="號碼" value="7號" class="w-full p-2 border rounded-lg text-sm"></div>
-              <div><input type="number" id="loc-floor" placeholder="樓層" value="1" class="w-full p-2 border rounded-lg text-sm"></div>
+          <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+            <h4 class="text-sm font-bold text-slate-700 flex items-center border-b border-slate-100 pb-2"><i class="fa-solid fa-location-dot text-rose-500 mr-2"></i>物件精確所在地</h4>
+            <p class="text-[10px] text-rose-500 font-bold mb-2">※ 地址必須精確填寫，以利後續媒合審核，前端只會對買家顯示至鄉鎮區。</p>
+            
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-[10px] font-bold text-slate-500 mb-1">縣市 *必填</label>
+                <input type="text" id="loc-city" placeholder="例：台北市" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-700 focus:bg-white outline-none">
+              </div>
+              <div>
+                <label class="block text-[10px] font-bold text-slate-500 mb-1">鄉鎮區村 *必填</label>
+                <input type="text" id="loc-dist" placeholder="例：信義區" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-700 focus:bg-white outline-none">
+              </div>
+              <div class="col-span-2">
+                <label class="block text-[10px] font-bold text-slate-500 mb-1">路段 *必填</label>
+                <input type="text" id="loc-road" placeholder="例：信義路五段" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-700 focus:bg-white outline-none">
+              </div>
+              <div>
+                <label class="block text-[10px] font-bold text-slate-500 mb-1">街道 (選填)</label>
+                <input type="text" id="loc-street" placeholder="例：無" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-700 focus:bg-white outline-none">
+              </div>
+              <div>
+                <label class="block text-[10px] font-bold text-slate-500 mb-1">巷弄 (選填)</label>
+                <input type="text" id="loc-alley" placeholder="例：150巷" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-700 focus:bg-white outline-none">
+              </div>
+              <div>
+                <label class="block text-[10px] font-bold text-slate-500 mb-1">號碼 *必填</label>
+                <input type="text" id="loc-no" placeholder="例：7號" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-700 focus:bg-white outline-none">
+              </div>
+              <div>
+                <label class="block text-[10px] font-bold text-slate-500 mb-1">所在樓層 *</label>
+                <div class="relative w-full">
+                  <input type="number" id="loc-floor" value="1" placeholder="例：3" class="w-full p-3 pr-8 bg-slate-50 border border-slate-200 rounded-xl text-slate-700 focus:bg-white outline-none text-center font-bold">
+                  <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 font-bold">樓</span>
+                </div>
+              </div>
             </div>
           </div>
 
-          <div class="grid grid-cols-2 gap-4">
-            <div><label class="block text-[10px] text-rose-500 font-bold mb-1">釋出死線</label><input type="date" id="form-deadline" class="w-full p-2 border rounded-lg"></div>
-            <div><label class="block text-[10px] text-teal-600 font-bold mb-1">建議售價 (100倍數)</label><input type="number" id="form-price" step="100" value="800" class="w-full p-2 border rounded-lg font-mono font-bold"></div>
+          <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-5">
+            <h4 class="text-sm font-bold text-slate-700 flex items-center border-b border-slate-100 pb-2"><i class="fa-solid fa-calendar-check text-teal-600 mr-2"></i>時間安排與售價</h4>
+            
+            <div class="bg-rose-50 p-4 rounded-xl border border-rose-100">
+              <label class="block text-[11px] font-bold text-rose-600 mb-1">預計釋出死線 (Deadline) *必填</label>
+              <input type="date" id="form-deadline" class="w-full p-3 bg-white border border-rose-200 rounded-xl text-slate-700 font-bold focus:outline-none focus:border-rose-400">
+              <p class="text-[9px] text-rose-400 mt-1">※ 若超過此日期未售出，將自動失效下架。</p>
+            </div>
+
+            <div>
+              <label class="block text-[11px] font-bold text-slate-500 mb-2 flex justify-between">
+                <span>買家方便取貨時間段</span>
+                <button onclick="addTimeSlot()" class="text-teal-600 font-bold"><i class="fa-solid fa-plus mr-1"></i>新增時段</button>
+              </label>
+              <div id="timeslot-container" class="space-y-2">
+                <div class="flex items-center gap-1 bg-slate-50 p-2 rounded-xl border border-slate-200">
+                  <input type="date" class="ts-date w-1/3 bg-transparent text-xs font-bold outline-none text-slate-600">
+                  <input type="time" class="ts-start w-1/3 bg-transparent text-xs font-bold outline-none text-slate-600 text-center">
+                  <span class="text-slate-300">-</span>
+                  <input type="time" class="ts-end w-1/3 bg-transparent text-xs font-bold outline-none text-slate-600 text-center">
+                </div>
+              </div>
+            </div>
+
+            <div class="pt-4 border-t border-slate-100">
+              <label class="block text-[11px] font-bold text-teal-700 mb-2">自訂建議售價 (TWD)</label>
+              <div class="relative">
+                <span class="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-slate-400">$</span>
+                <input type="number" id="form-price" min="100" max="2000" step="100" value="800" placeholder="限 100~2000，且為 100 倍數" class="w-full p-3 pl-8 bg-teal-50 border border-teal-200 rounded-xl text-lg text-teal-900 font-mono font-bold focus:outline-none focus:border-teal-500 focus:bg-white transition">
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
+              <div>
+                <label class="block text-[10px] font-bold text-slate-500 mb-1">搬下樓服務 (提升媒合率)</label>
+                <select id="form-carry" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:outline-none">
+                  <option value="可以幫忙搬下樓">✅ 可以幫忙搬下一樓</option>
+                  <option value="無法幫忙搬下樓">❌ 無法幫忙搬下一樓</option>
+                  <option value="此物不必搬下樓">➖ 此物不必搬下樓 (位於一樓或有電梯)</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-[10px] font-bold text-slate-500 mb-1">拆卸服務 (提升媒合率)</label>
+                <select id="form-disasm" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:outline-none">
+                  <option value="可以幫忙拆卸">🛠️ 可以幫忙拆卸</option>
+                  <option value="無法幫忙拆卸">❌ 無法幫忙拆卸</option>
+                  <option value="此物不必拆卸" selected>➖ 此物不必拆卸</option>
+                </select>
+              </div>
+            </div>
           </div>
 
-          <button id="btn-submit" onclick="submitForm()" class="w-full py-3 bg-slate-800 text-white rounded-xl font-bold tracking-widest">發佈上架</button>
+          <button id="btn-submit" onclick="submitForm()" class="w-full py-4 mt-4 bg-teal-700 hover:bg-teal-800 text-white rounded-xl text-base font-bold shadow-xl tracking-widest transition flex justify-center items-center">
+            確認資訊並發佈上架
+          </button>
         </div>
       </div>
     </div>
@@ -116,13 +230,12 @@
 
   <script>
     // ==========================================
-    // 🔗 核心設定：請填寫你的 GAS 網頁應用程式 URL
+    // 🔗 核心設定：請填寫你最新部署的 GAS 網址
     // ==========================================
     const GAS_API_URL = "https://script.google.com/macros/s/AKfycbwtBHLxEmAolz6TxMJw43fUmugQokKA6RncGXf9W3A0dUFx5XI2YSZOPsAOR7PFw1NW-g/exec";
 
-    // 模擬已登入的使用者資訊
     const currentUser = { email: "alwayslucky2hand@gmail.com", memberCode: "alwayslucky2hand" };
-    document.getElementById('current-user-info').innerText = currentUser.email;
+    document.getElementById('current-user-info').innerText = currentUser.memberCode;
 
     let items = [];
     const angles = ['上方', '下方', '左側', '右側', '前方', '後方', '合照'];
@@ -130,25 +243,14 @@
     let mockUploadedPhotos = [];
     let videoStream = null;
 
-    // ==========================================
-    // 🚀 使用 Fetch API 取代 google.script.run
-    // ==========================================
     async function callBackendAPI(action, data) {
       if (!GAS_API_URL || GAS_API_URL.includes("請把剛剛部署")) {
-        alert("開發者提示：請先在 index.html 的原始碼中填寫 GAS_API_URL！");
-        throw new Error("Missing GAS_API_URL");
+        alert("開發者提醒：請先在原始碼中設定 GAS_API_URL！"); throw new Error("Missing API URL");
       }
-      
       try {
-        const response = await fetch(GAS_API_URL, {
-          method: 'POST',
-          // 為了繞過 GAS 嚴格的 CORS 限制，這裡使用 text/plain 發送 JSON 字串
-          body: JSON.stringify({ action, data })
-        });
-        const result = await response.json();
-        return result;
+        const res = await fetch(GAS_API_URL, { method: 'POST', body: JSON.stringify({ action, data }) });
+        return await res.json();
       } catch (err) {
-        console.error("API Error:", err);
         throw err;
       }
     }
@@ -156,9 +258,37 @@
     function showToast(msg, type = 'info') {
       const c = document.getElementById('toast-container');
       const t = document.createElement('div');
-      t.className = `px-5 py-3 rounded-xl shadow-xl transition-all font-bold text-sm text-white ${type==='success'?'bg-teal-600':type==='error'?'bg-rose-600':'bg-slate-800'}`;
+      t.className = `px-5 py-3.5 rounded-xl shadow-xl transition-all duration-300 font-bold text-sm text-center text-white transform -translate-y-10 opacity-0 ${type==='success'?'bg-teal-600':type==='error'?'bg-rose-600':'bg-slate-800'}`;
       t.innerText = msg; c.appendChild(t);
-      setTimeout(() => t.remove(), 3000);
+      requestAnimationFrame(() => { t.classList.remove('-translate-y-10', 'opacity-0'); });
+      setTimeout(() => { t.classList.add('-translate-y-10', 'opacity-0'); setTimeout(() => t.remove(), 300); }, 3000);
+    }
+
+    function renderItems() {
+      const container = document.getElementById('items-container');
+      container.innerHTML = '';
+      if(items.length === 0) return container.innerHTML = '<p class="text-center text-slate-400 font-bold mt-10">尚無上架物件</p>';
+
+      items.forEach(item => {
+        let urlsArray = item.photoUrlsString ? item.photoUrlsString.split(',') : [];
+        let imgsHtml = urlsArray.map(url => `<img src="${url}" class="h-24 w-32 flex-shrink-0 object-cover rounded-lg shadow-sm border border-slate-100">`).join('');
+        
+        container.insertAdjacentHTML('beforeend', `
+          <div class="bg-white rounded-2xl shadow-sm border border-l-4 border-slate-200 border-l-teal-500 overflow-hidden">
+            <div class="p-4">
+              <div class="flex justify-between items-center mb-1">
+                <span class="text-[10px] font-mono text-slate-400 font-bold">${item.id}</span>
+                <span class="bg-teal-50 text-teal-700 px-2 py-0.5 rounded text-[10px] font-bold">上架中</span>
+              </div>
+              <h3 class="text-base font-bold text-slate-800">${item.name} <span class="text-xs font-normal text-slate-500 ml-1">(${item.color})</span></h3>
+              <p class="text-xs text-slate-500 mt-1 font-bold"><i class="fa-solid fa-location-dot mr-1"></i>${item.city}${item.district}</p>
+            </div>
+            <div class="p-4 border-t border-slate-50 bg-slate-50/50">
+              <div class="flex space-x-3 overflow-x-auto hide-scroll pb-1">${imgsHtml}</div>
+            </div>
+          </div>
+        `);
+      });
     }
 
     async function initCamera() {
@@ -166,17 +296,16 @@
         videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
         document.getElementById('camera-stream').srcObject = videoStream;
       } catch (err) {
-        showToast("無法開啟相機，請允許瀏覽器存取相機權限", "error");
+        showToast("相機啟動失敗，請檢查權限", "error");
       }
     }
 
     function stopCamera() {
-      if (videoStream) videoStream.getTracks().forEach(track => track.stop());
+      if (videoStream) videoStream.getTracks().forEach(t => t.stop());
     }
 
     function startListingFlow() {
       currentAngleIndex = 0; mockUploadedPhotos = [];
-      document.getElementById('form-member-code').value = currentUser.memberCode;
       document.getElementById('cam-angle-text').innerText = angles[0];
       
       document.getElementById('step-camera').classList.remove('hidden');
@@ -199,38 +328,41 @@
       canvas.width = video.videoWidth; canvas.height = video.videoHeight;
       canvas.getContext('2d').drawImage(video, 0, 0);
       
-      const b64 = canvas.toDataURL('image/jpeg', 0.6); // 稍微壓縮確保傳輸速度
+      const b64 = canvas.toDataURL('image/jpeg', 0.6); 
       mockUploadedPhotos.push(b64);
 
       if(currentAngleIndex < angles.length - 1) {
         currentAngleIndex++;
         document.getElementById('cam-angle-text').innerText = angles[currentAngleIndex];
-        showToast("已拍攝，請換下一個角度", "success");
+        document.getElementById('cam-progress').innerHTML = angles.map((_,i) => `<div class="h-2 w-full rounded-full ${i<=currentAngleIndex?'bg-teal-500':'bg-slate-200'}"></div>`).join('');
       } else {
         stopCamera();
         const btn = document.getElementById('btn-take-photo');
-        btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin mr-2"></i>呼叫 Gemini AI 分析中...`;
-        btn.disabled = true;
+        btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin mr-2"></i>AI 辨識中...`; btn.disabled = true;
 
         try {
-          // 👉 透過 Fetch 呼叫 GitHub 版 API
           const res = await callBackendAPI('analyzeImages', { photos: mockUploadedPhotos });
           if (res.status === 'success') {
             document.getElementById('form-cat').value = res.data.category || '';
             document.getElementById('form-item').value = res.data.itemType || '';
             document.getElementById('form-name').value = res.data.name || '';
+            document.getElementById('form-color').value = res.data.color || ''; // 新增的色系
             document.getElementById('form-w').value = res.data.width || '';
             document.getElementById('form-d').value = res.data.depth || '';
             document.getElementById('form-h').value = res.data.height || '';
-            showToast("AI 辨識完成！", "success");
             
+            showToast("AI 辨識完成！", "success");
             document.getElementById('step-camera').classList.add('hidden');
             document.getElementById('step-form').classList.remove('hidden');
+            
+            // 預設日期
+            const d = new Date(); d.setDate(d.getDate() + 14);
+            document.getElementById('form-deadline').value = d.toISOString().split('T')[0];
           } else {
-            showToast(res.message, "error");
+            showToast("AI 解析失敗: " + res.message, "error");
           }
         } catch (e) {
-          showToast("連線異常，請手動填寫", "error");
+          showToast("網路異常，請手動填寫資料", "error");
           document.getElementById('step-camera').classList.add('hidden');
           document.getElementById('step-form').classList.remove('hidden');
         }
@@ -238,35 +370,74 @@
       }
     }
 
+    function addTimeSlot() {
+      const html = `
+        <div class="flex items-center gap-1 bg-slate-50 p-2 rounded-xl border border-slate-200 mt-2">
+          <input type="date" class="ts-date w-1/3 bg-transparent text-xs font-bold outline-none text-slate-600">
+          <input type="time" class="ts-start w-1/3 bg-transparent text-xs font-bold outline-none text-slate-600 text-center">
+          <span class="text-slate-300">-</span>
+          <input type="time" class="ts-end w-1/3 bg-transparent text-xs font-bold outline-none text-slate-600 text-center">
+          <button onclick="this.parentElement.remove()" class="text-rose-400 pl-1"><i class="fa-solid fa-xmark"></i></button>
+        </div>`;
+      document.getElementById('timeslot-container').insertAdjacentHTML('beforeend', html);
+    }
+
     async function submitForm() {
+      const p = parseInt(document.getElementById('form-price').value);
+      if(p < 100 || p > 2000 || p % 100 !== 0) return showToast("金額須在 100~2000 且為 100 倍數", "error");
+      if(!document.getElementById('form-deadline').value) return showToast("請填寫釋出死線", "error");
+      
       const btn = document.getElementById('btn-submit');
-      btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> 上傳資料庫中...`; btn.disabled = true;
+      btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin mr-2"></i>儲存並上傳中...`; btn.disabled = true;
+
+      // 蒐集時段
+      let tsEls = document.querySelectorAll('#timeslot-container > div');
+      let timeSlotsStr = Array.from(tsEls).map(el => `${el.querySelector('.ts-date').value} ${el.querySelector('.ts-start').value}~${el.querySelector('.ts-end').value}`).join(' | ');
 
       const newItem = {
-        id: `ITM-${Math.floor(Math.random()*1000).toString().padStart(3,'0')}`,
+        id: `ITM-${Math.floor(Math.random()*10000).toString().padStart(4,'0')}`,
         sellerEmail: currentUser.email,
         sellerMemberCode: currentUser.memberCode,
-        name: document.getElementById('form-name').value,
         category: document.getElementById('form-cat').value,
         itemType: document.getElementById('form-item').value,
+        name: document.getElementById('form-name').value,
+        color: document.getElementById('form-color').value, // 確保送出色系
         width: document.getElementById('form-w').value,
         depth: document.getElementById('form-d').value,
         height: document.getElementById('form-h').value,
-        price: document.getElementById('form-price').value,
+        city: document.getElementById('loc-city').value,
+        district: document.getElementById('loc-dist').value,
+        road: document.getElementById('loc-road').value,
+        street: document.getElementById('loc-street').value, // 新增街道
+        alley: document.getElementById('loc-alley').value,   // 新增巷弄
+        number: document.getElementById('loc-no').value,
+        floor: document.getElementById('loc-floor').value,
+        deadline: document.getElementById('form-deadline').value,
+        timeSlots: timeSlotsStr,
+        price: p,
+        wasteFee: 1500, // 模擬
+        carry: document.getElementById('form-carry').value,
+        disassemble: document.getElementById('form-disasm').value,
+        status: "Active",
         photosBase64: mockUploadedPhotos
       };
 
       try { 
-        // 👉 透過 Fetch 呼叫 GitHub 版 API
-        await callBackendAPI('saveListing', newItem); 
-        showToast("上架成功！照片已自動儲存", "success");
+        const res = await callBackendAPI('saveListing', newItem); 
+        // 樂觀 UI 渲染
+        items.unshift({ ...newItem, photoUrlsString: res.photoUrls || "" });
+        renderItems();
+        showToast("物件已成功上架！", "success");
         closeModal();
       } catch (err) { 
-        showToast("寫入異常，請檢查網路狀態", "error"); 
+        showToast("寫入異常，請重試", "error"); 
       } finally { 
-        btn.innerHTML = "發佈上架"; btn.disabled = false; 
+        btn.innerHTML = "確認資訊並發佈上架"; btn.disabled = false; 
       }
     }
+
+    // 初始化渲染
+    renderItems();
   </script>
 </body>
 </html>
