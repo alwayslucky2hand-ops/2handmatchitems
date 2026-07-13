@@ -312,7 +312,9 @@
       });
       document.getElementById(`tab-content-${tabId}`).classList.remove('hidden');
       const activeBtn = document.getElementById(`tab-app-${tabId}`); activeBtn.classList.add('text-teal-700', 'border-teal-600'); activeBtn.classList.remove('text-slate-400', 'border-transparent');
-      if (tabId === 'market') { renderSellerItems(); renderBuyerReqs(); }
+      
+      
+      if (tabId === 'market') { loadMarketData(); }
     }
 
     function showAppArea() {
@@ -394,8 +396,36 @@
     }
 
     // ==========================================
-    // 買賣專區邏輯 (雙子分頁 + 草稿 + 樂觀 UI)
+    // 買賣專區邏輯 (雙子分頁 + 草稿 + 樂觀 UI + 🆕動態載入資料)
     // ==========================================
+
+    // 🆕 核心新增：向 GAS 抓取試算表資料的函式
+    async function loadMarketData() {
+      document.getElementById('seller-items-container').innerHTML = '<p class="text-center text-slate-400 font-bold mt-10"><i class="fa-solid fa-spinner fa-spin mr-2"></i>載入試算表資料庫中...</p>';
+      document.getElementById('buyer-reqs-container').innerHTML = '<p class="text-center text-slate-400 font-bold mt-10"><i class="fa-solid fa-spinner fa-spin mr-2"></i>載入試算表資料庫中...</p>';
+      try {
+        const [itemsRes, reqsRes] = await Promise.all([
+          callBackendAPI('getItems', {}),
+          callBackendAPI('getRequirements', {})
+        ]);
+        
+        if (itemsRes.status === 'success') {
+          sellerItems = itemsRes.data;
+          localStorage.setItem('local_seller_items', JSON.stringify(sellerItems)); // 同步本地快取
+          renderSellerItems();
+        }
+        
+        if (reqsRes.status === 'success') {
+          buyerReqs = reqsRes.data;
+          localStorage.setItem('local_buyer_reqs', JSON.stringify(buyerReqs)); // 同步本地快取
+          renderBuyerReqs();
+        }
+      } catch (error) {
+        showToast("資料庫載入失敗，已切換為本地快取", "error");
+        renderSellerItems();
+        renderBuyerReqs();
+      }
+    }
 
     function switchMarketTab(tab) {
       document.getElementById('view-seller').classList.toggle('hidden', tab !== 'seller'); document.getElementById('view-buyer').classList.toggle('hidden', tab !== 'buyer');
